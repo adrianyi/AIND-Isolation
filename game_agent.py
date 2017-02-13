@@ -211,12 +211,7 @@ class CustomPlayer:
             scores = [self.score(game.forecast_move(move), self) for move in possible_next_moves]
         
         # Return max or min score, next_position combination.
-        if maximizing_layer:
-            best_move = max(zip(scores,possible_next_moves), key=lambda x: x[0])
-        else:
-            best_move = min(zip(scores,possible_next_moves), key=lambda x: x[0])
-        
-        return best_move
+        return maxmin_move(scores,possible_next_moves,maximizing_layer)
 
     def alphabeta(self, game, depth, alpha=float("-inf"), beta=float("inf"), maximizing_layer=True):
         """Implement minimax search with alpha-beta pruning as described in the
@@ -260,4 +255,32 @@ class CustomPlayer:
             raise Timeout()
 
         # TODO: finish this function!
-        raise NotImplementedError
+                # Get the list of next possible moves
+        possible_next_moves = game.get_legal_moves(game.active_player)
+        
+        # If there's no next moves, return (-1,-1).
+        # If it's on CustomPlayer's turn, it's a losing state! Return score of -inf.  If it's not, it's a winning state---score of +inf.
+        if len(possible_next_moves)==0:
+            if maximizing_layer:
+                return (float('-inf'),(-1,-1))
+            else:
+                return (float('inf'),(-1,-1))
+        
+        # This only runs when there are possible next moves.
+        # If it has not reached the defined depth in the tree, go one layer deeper recursively.
+        # If the defined depth is reached, calculate the score for the leaf nodes.  Score is in the perspective of the CustomPlayer agent.
+        if depth > 1:
+            scores = [self.minimax(game.forecast_move(move), depth-1, not maximizing_layer)[0] for move in possible_next_moves]
+        else:
+            scores = [self.score(game.forecast_move(move), self) for move in possible_next_moves]
+        
+        # Return max or min score, next_position combination.
+        return maxmin_move(scores,possible_next_moves,maximizing_layer)
+    
+def maxmin_move(scores,possible_next_moves,maximizing_layer):
+    # For list of scores and list of possible_next_moves, return either max or min 
+    if maximizing_layer:
+        best_move = max(zip(scores,possible_next_moves), key=lambda x: x[0])
+    else:
+        best_move = min(zip(scores,possible_next_moves), key=lambda x: x[0])
+    return best_move
