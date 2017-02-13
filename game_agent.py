@@ -270,12 +270,28 @@ class CustomPlayer:
         # If it has not reached the defined depth in the tree, go one layer deeper recursively.
         # If the defined depth is reached, calculate the score for the leaf nodes.  Score is in the perspective of the CustomPlayer agent.
         if depth > 1:
-            scores = [self.minimax(game.forecast_move(move), depth-1, not maximizing_layer)[0] for move in possible_next_moves]
+            # First node score
+            scores = [self.alphabeta(game.forecast_move(possible_next_moves[0]), depth-1, alpha, beta, not maximizing_layer)[0]]
+            for move in possible_next_moves[1:]:
+                if maximizing_layer:
+                    if scores[-1] >= beta:
+                        break
+                    new_alpha = max(scores)
+                    scores.append(self.alphabeta(game.forecast_move(move), depth-1, new_alpha, beta, not maximizing_layer)[0])
+                else:
+                    if scores[-1] <= alpha:
+                        break
+                    new_beta = min(scores)
+                    scores.append(self.alphabeta(game.forecast_move(move), depth-1, alpha, new_beta, not maximizing_layer)[0])
         else:
-            scores = [self.score(game.forecast_move(move), self) for move in possible_next_moves]
+            scores = []
+            for move in possible_next_moves:
+                scores.append(self.score(game.forecast_move(move), self))
+                if (maximizing_layer and scores[-1]>=beta) or ((not maximizing_layer) and scores[-1]<=alpha):
+                    break
         
         # Return max or min score, next_position combination.
-        return maxmin_move(scores,possible_next_moves,maximizing_layer)
+        return maxmin_move(scores,possible_next_moves[:len(scores)],maximizing_layer)
     
 def maxmin_move(scores,possible_next_moves,maximizing_layer):
     # For list of scores and list of possible_next_moves, return either max or min 
