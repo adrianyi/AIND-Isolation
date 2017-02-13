@@ -123,22 +123,34 @@ class CustomPlayer:
         # Perform any required initializations, including selecting an initial
         # move from the game board (i.e., an opening book), or returning
         # immediately if there are no legal moves
+        position = (-1,-1)
+        if len(legal_moves) == 0:
+            return position
+        
+        if self.method=='alphabeta':
+            algorithm = self.alphabeta
+        else:
+            algorithm = self.minimax
 
         try:
             # The search method call (alpha beta or minimax) should happen in
             # here in order to avoid timeout. The try/except block will
             # automatically catch the exception raised by the search method
             # when the timer gets close to expiring
-            pass
+            if self.iterative:
+                for depth in range(1,self.search_depth+1):
+                    score, position = algorithm(game, depth)
+            else:
+                score, position = algorithm(game, self.search_depth)
 
         except Timeout:
             # Handle any actions required at timeout, if necessary
-            pass
+            return position
 
         # Return the best move from the last completed search iteration
-        raise NotImplementedError
-
-    def minimax(self, game, depth, maximizing_player=True):
+        return position
+    
+    def minimax(self, game, depth, maximizing_layer=True):
         """Implement the minimax search algorithm as described in the lectures.
 
         Parameters
@@ -173,22 +185,27 @@ class CustomPlayer:
             raise Timeout()
         
         # TODO: finish this function!
-        x,y = game.get_player_location(game.active_player)
-        possible_next_moves = game.get_legal_moves()
+        possible_next_moves = game.get_legal_moves(game.active_player)
         
         if len(possible_next_moves)==0:
-            return (0,(-1,-1))
+            if maximizing_layer:
+                return (float('-inf'),(-1,-1))
+            else:
+                return (float('inf'),(-1,-1))
         
-        scores = [self.score(game.forecast_move(move),game.active_player) for move in possible_next_moves]
-        
-        if maximizing_player:
-            next_move = max(zip(scores,possible_next_moves))
+        if depth > 1:
+            scores = [self.minimax(game.forecast_move(move), depth-1, not maximizing_layer)[0] for move in possible_next_moves]
         else:
-            next_move = min(zip(scores,possible_next_moves))
+            scores = [self.score(game.forecast_move(move), self) for move in possible_next_moves]
         
-        return next_move
+        if maximizing_layer:
+            best_move = max(zip(scores,possible_next_moves), key=lambda x: x[0])
+        else:
+            best_move = min(zip(scores,possible_next_moves), key=lambda x: x[0])
+        
+        return best_move
 
-    def alphabeta(self, game, depth, alpha=float("-inf"), beta=float("inf"), maximizing_player=True):
+    def alphabeta(self, game, depth, alpha=float("-inf"), beta=float("inf"), maximizing_layer=True):
         """Implement minimax search with alpha-beta pruning as described in the
         lectures.
 
@@ -208,7 +225,7 @@ class CustomPlayer:
         beta : float
             Beta limits the upper bound of search on maximizing layers
 
-        maximizing_player : bool
+        maximizing_layer : bool
             Flag indicating whether the current search depth corresponds to a
             maximizing layer (True) or a minimizing layer (False)
 
