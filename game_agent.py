@@ -38,8 +38,41 @@ def custom_score(game, player):
     """
 
     # TODO: finish this function!
-    raise NotImplementedError
+    # First, check if the game is lost or won.
+    if game.is_loser(player):
+        return float("-inf")
 
+    if game.is_winner(player):
+        return float("inf")
+    
+    ## Choose which option.  Defauts to 3 if wrong number is written.
+    option = 3
+    
+    if option == 1:
+        # Option one
+        # Simplest: player's available moves - opponent's available moves
+        player_moves = len(game.get_legal_moves(player))
+        opponent_moves = len(game.get_legal_moves(game.get_opponent(player)))
+        score = player_moves - opponent_moves
+    elif option == 2:
+        # Option two
+        # Modification of option one.
+        # After playing a couple of games on my own, it appears that the strategy of trying to block the opponent does not work well.
+        # This is because knight's movement is quite restrictive, and it's easy to find myself in a bad position.
+        player_moves = len(game.get_legal_moves(player))
+        opponent_moves = len(game.get_legal_moves(game.get_opponent(player)))
+        score = 2*player_moves - opponent_moves
+    else:
+        # Option three
+        # Deeper search into my own path
+        player_next_moves = game.get_legal_moves(player)
+        player_next_next_moves = []
+        for move in player_next_moves:
+            player_next_next_moves += (game.forecast_move(move)).get_legal_moves(player)
+        player_next_next_moves = set(player_next_next_moves)
+        score = len(player_next_moves) + len(player_next_next_moves)
+    
+    return float(score)
 
 class CustomPlayer:
     """Game-playing agent that chooses a move using your evaluation function
