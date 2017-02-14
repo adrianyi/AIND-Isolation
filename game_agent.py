@@ -141,10 +141,12 @@ class CustomPlayer:
             # automatically catch the exception raised by the search method
             # when the timer gets close to expiring
             
-            #If iterative, run algorithm from depth of 1 up to search_depth
+            #If iterative, 
             if self.iterative:
-                for depth in range(1,self.search_depth+1):
+                depth = 1
+                while True:
                     score, position = algorithm(game, depth)
+                    depth += 1
             else:
                 score, position = algorithm(game, self.search_depth)
 
@@ -292,8 +294,8 @@ class CustomPlayer:
         
         # Return max or min score, next_position combination.
         return maxmin_move(scores,possible_next_moves[:len(scores)],maximizing_layer)
-    
-def maxmin_move(scores,possible_next_moves,maximizing_layer):
+
+def maxmin_move(scores, possible_next_moves, maximizing_layer):
     # For list of scores and list of possible_next_moves, return either max or min 
     if maximizing_layer:
         best_move = max(zip(scores,possible_next_moves), key=lambda x: x[0])
