@@ -141,12 +141,13 @@ class CustomPlayer:
             # automatically catch the exception raised by the search method
             # when the timer gets close to expiring
             
-            #If iterative, 
+            # If iterative, run selected method continuously with increasing depth until time runs out, saving the output at every level
             if self.iterative:
                 depth = 1
                 while True:
                     score, position = algorithm(game, depth)
                     depth += 1
+            # If not iterative, perform a single fixed-depth search
             else:
                 score, position = algorithm(game, self.search_depth)
 
@@ -275,6 +276,9 @@ class CustomPlayer:
             # First node score
             scores = [self.alphabeta(game.forecast_move(possible_next_moves[0]), depth-1, alpha, beta, not maximizing_layer)[0]]
             for move in possible_next_moves[1:]:
+                # For minimizing layer, kill node if previous node is already less than alpha.
+                # If it can't be removed, update the beta for the following layer, then recursively continue.
+                # Similar for maximizing layer.
                 if maximizing_layer:
                     if scores[-1] >= beta:
                         break
@@ -285,6 +289,7 @@ class CustomPlayer:
                         break
                     new_beta = min(scores)
                     scores.append(self.alphabeta(game.forecast_move(move), depth-1, alpha, new_beta, not maximizing_layer)[0])
+        # Reached leaf nodes, calculate score.
         else:
             scores = []
             for move in possible_next_moves:
