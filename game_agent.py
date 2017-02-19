@@ -14,6 +14,11 @@ class Timeout(Exception):
     pass
 
 
+import math
+log2 = {0:float('-inf')}
+for i in range(1,9):
+    log2[i] = math.log2(i)
+
 def custom_score(game, player):
     """Calculate the heuristic value of a game state from the point of view
     of the given player.
@@ -41,38 +46,44 @@ def custom_score(game, player):
     # First, check if the game is lost or won.
     if game.is_loser(player):
         return float("-inf")
-
     if game.is_winner(player):
         return float("inf")
     
-    ## Choose which option.  Defauts to 3 if wrong number is written.
-    option = 3
-    
-    if option == 1:
-        # Option one
-        # Simplest: player's available moves - opponent's available moves
-        player_moves = len(game.get_legal_moves(player))
-        opponent_moves = len(game.get_legal_moves(game.get_opponent(player)))
-        score = player_moves - opponent_moves
-    elif option == 2:
-        # Option two
-        # Modification of option one.
-        # After playing a couple of games on my own, it appears that the strategy of trying to block the opponent does not work well.
-        # This is because knight's movement is quite restrictive, and it's easy to find myself in a bad position.
-        player_moves = len(game.get_legal_moves(player))
-        opponent_moves = len(game.get_legal_moves(game.get_opponent(player)))
-        score = 2*player_moves - opponent_moves
+#    # Option one: "Guaranteed moves"
+#    # Only count number of moves that are guaranteed---subtract one if there's an overlap between my moves and opponent's moves
+#    active_moves = set(game.get_legal_moves(game.active_player))
+#    inactive_moves = set(game.get_legal_moves(game.inactive_player))
+#    score = len(active_moves) - max(len(inactive_moves - active_moves),len(inactive_moves)-1)
+#    if game.active_player == player:
+#        return score
+#    else:
+#        return -score
+#    
+#    # Option two: "Percent score"
+#    # Look at the available moves as percent of total blank spaces
+#    n_active = len(game.get_legal_moves(game.active_player))
+#    n_inactive = len(game.get_legal_moves(game.inactive_player))
+#    n_empty = len(game.get_blank_spaces())
+#    score = n_active/n_empty - n_inactive/max(n_empty-1,0.5)
+#    if game.active_player == player:
+#        return score
+#    else:
+#        return -score
+#    
+    # Option three: "Single branch depth search"
+    # If there's only a single choice for a move for the active player, then go deeper recursively
+    active_moves = game.get_legal_moves(game.active_player)
+    if len(active_moves) == 1:
+        return custom_score(game.forecast_move(active_moves[0]),player)
     else:
-        # Option three
-        # Deeper search into my own path
-        player_next_moves = game.get_legal_moves(player)
-        player_next_next_moves = []
-        for move in player_next_moves:
-            player_next_next_moves += (game.forecast_move(move)).get_legal_moves(player)
-        player_next_next_moves = set(player_next_next_moves)
-        score = len(player_next_moves) + len(player_next_next_moves)
-    
-    return float(score)
+        active_moves = set(active_moves)
+        inactive_moves = set(game.get_legal_moves(game.inactive_player))
+        n_empty = len(game.get_blank_spaces())
+        score = len(active_moves)/n_empty - len(inactive_moves - active_moves)/(n_empty-1)
+        if game.active_player == player:
+            return score
+        else:
+            return -score
 
 class CustomPlayer:
     """Game-playing agent that chooses a move using your evaluation function
